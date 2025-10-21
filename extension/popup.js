@@ -1,4 +1,4 @@
-import { getDB, setDB, getSettings, setSettings, appendEntry, deleteEntry } from './db.js';
+import { getDB, setDB, getSettings, setSettings, appendEntry, deleteEntry, normalizeText } from './db.js';
 
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
@@ -245,8 +245,11 @@ function wireEvents() {
           const index = { text: [], paragraph: [], radio: [], checkbox: [], dropdown: [] };
           for (const f of entry.fields || []) {
             const values = Array.isArray(f.values) ? f.values : (f.value != null ? [String(f.value)] : []);
+            const label = String(f.label || '');
+            const labelNorm = normalizeText(label);
+            const valuesNorm = values.map(v => normalizeText(v));
             index[f.type] = index[f.type] || [];
-            index[f.type].push({ label: String(f.label || ''), labelNorm: null, type: f.type, values, valuesNorm: null });
+            index[f.type].push({ label, labelNorm, type: f.type, values, valuesNorm });
           }
           // send directly to current tab content script
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
