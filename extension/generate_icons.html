@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas16" width="16" height="16"></canvas>
+    <canvas id="canvas32" width="32" height="32"></canvas>
+    <canvas id="canvas48" width="48" height="48"></canvas>
+    <canvas id="canvas128" width="128" height="128"></canvas>
+    
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            const scale = size / 128;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Background circle with gradient
+            const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            gradient.addColorStop(0, '#3B82F6');
+            gradient.addColorStop(0.5, '#1D4ED8');
+            gradient.addColorStop(1, '#1E40AF');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2 - 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Form document
+            const docX = 32 * scale;
+            const docY = 24 * scale;
+            const docW = 48 * scale;
+            const docH = 64 * scale;
+            
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = '#E5E7EB';
+            ctx.lineWidth = 1.5 * scale;
+            ctx.fillRect(docX, docY, docW, docH);
+            ctx.strokeRect(docX, docY, docW, docH);
+            
+            // Form lines
+            ctx.fillStyle = '#6B7280';
+            const lineY = 32 * scale;
+            const lineH = 2 * scale;
+            const lineW = 32 * scale;
+            ctx.fillRect(36 * scale, lineY, lineW, lineH);
+            ctx.fillRect(36 * scale, lineY + 6 * scale, 28 * scale, lineH);
+            ctx.fillRect(36 * scale, lineY + 12 * scale, 30 * scale, lineH);
+            ctx.fillRect(36 * scale, lineY + 18 * scale, 24 * scale, lineH);
+            
+            // Checkbox
+            const checkX = 36 * scale;
+            const checkY = 58 * scale;
+            const checkSize = 12 * scale;
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = '#10B981';
+            ctx.lineWidth = 2 * scale;
+            ctx.fillRect(checkX, checkY, checkSize, checkSize);
+            ctx.strokeRect(checkX, checkY, checkSize, checkSize);
+            
+            // Checkmark
+            ctx.strokeStyle = '#10B981';
+            ctx.lineWidth = 2 * scale;
+            ctx.beginPath();
+            ctx.moveTo(checkX + 4 * scale, checkY + 4 * scale);
+            ctx.lineTo(checkX + 6 * scale, checkY + 6 * scale);
+            ctx.lineTo(checkX + 10 * scale, checkY + 2 * scale);
+            ctx.stroke();
+            
+            // Radio button
+            const radioX = 52 * scale;
+            const radioY = 64 * scale;
+            const radioR = 6 * scale;
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = '#3B82F6';
+            ctx.lineWidth = 2 * scale;
+            ctx.beginPath();
+            ctx.arc(radioX, radioY, radioR, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Radio button center
+            ctx.fillStyle = '#3B82F6';
+            ctx.beginPath();
+            ctx.arc(radioX, radioY, 3 * scale, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Magic wand
+            const wandX = 70 * scale;
+            const wandY = 20 * scale;
+            ctx.fillStyle = '#F59E0B';
+            ctx.fillRect(wandX, wandY, 4 * scale, 4 * scale);
+            ctx.fillRect(wandX + 4 * scale, wandY + 4 * scale, 4 * scale, 4 * scale);
+            ctx.fillRect(wandX + 8 * scale, wandY, 4 * scale, 4 * scale);
+            ctx.fillRect(wandX + 12 * scale, wandY + 4 * scale, 4 * scale, 4 * scale);
+            
+            // Arrow
+            const arrowX = 88 * scale;
+            const arrowY = 64 * scale;
+            ctx.strokeStyle = '#6B7280';
+            ctx.lineWidth = 2 * scale;
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(arrowX + 12 * scale, arrowY);
+            ctx.moveTo(arrowX + 8 * scale, arrowY - 4 * scale);
+            ctx.lineTo(arrowX + 12 * scale, arrowY);
+            ctx.lineTo(arrowX + 8 * scale, arrowY + 4 * scale);
+            ctx.stroke();
+        }
+        
+        // Generate all icon sizes
+        drawIcon(document.getElementById('canvas16'), 16);
+        drawIcon(document.getElementById('canvas32'), 32);
+        drawIcon(document.getElementById('canvas48'), 48);
+        drawIcon(document.getElementById('canvas128'), 128);
+        
+        // Download functions
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Auto-download all icons
+        setTimeout(() => {
+            downloadCanvas(document.getElementById('canvas16'), 'icon-16.png');
+            downloadCanvas(document.getElementById('canvas32'), 'icon-32.png');
+            downloadCanvas(document.getElementById('canvas48'), 'icon-48.png');
+            downloadCanvas(document.getElementById('canvas128'), 'icon-128.png');
+        }, 1000);
+    </script>
+</body>
+</html>
