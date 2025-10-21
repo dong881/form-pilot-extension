@@ -1,76 +1,146 @@
-# 修復自動下一步和範本填寫問題
+# 修復表單編輯和自動下一步功能問題
 
 ## 問題分析
 
-經過代碼分析，發現了兩個主要問題：
+根據用戶反饋，存在以下三個主要問題：
 
-### 1. 編輯過的範本無法自動填入
-**根本原因**：在 `popup.js` 中，當直接套用範本時，`labelNorm` 和 `valuesNorm` 被設為 `null`，導致相似度匹配失敗。
+1. **錯誤日誌問題**：編輯過後會出現「❌ 未找到匹配的欄位，請確認範本是否適用於此表單」的錯誤
+2. **自動下一步 UI 版面配置問題**：內容物太過靠上，整體高度過高，需要高度置中
+3. **自動下一步功能失效**：繼續/continue 等功能無法正確運作
 
-**修復方案**：
-- 在 `popup.js` 中導入 `normalizeText` 函數
-- 修正範本套用時的索引建立邏輯，正確計算 `labelNorm` 和 `valuesNorm`
+## 修復方案
 
-### 2. 自動下一步功能失效
-**根本原因**：按鈕檢測邏輯可能存在問題，需要增強按鈕選擇器的覆蓋範圍和調試信息。
+### 1. 修復錯誤日誌問題
 
-**修復方案**：
-- 擴展按鈕選擇器，包含更多類型的可點擊元素
-- 增加調試日誌，幫助識別按鈕檢測問題
-- 改善按鈕點擊前的可見性檢查
+**問題原因**：當 `filledCount === 0` 時，系統會顯示通用的錯誤訊息，沒有提供足夠的診斷信息。
 
-## 已實施的修復
+**修復內容**：
+- 改進錯誤訊息，提供更詳細的診斷信息
+- 區分不同情況：無可識別欄位 vs 有欄位但無匹配範本
+- 顯示實際找到的欄位數量
 
-### 1. 修復範本填寫問題
 ```javascript
-// 在 popup.js 中修正範本套用邏輯
-for (const f of entry.fields || []) {
-  const values = Array.isArray(f.values) ? f.values : (f.value != null ? [String(f.value)] : []);
-  const label = String(f.label || '');
-  const labelNorm = normalizeText(label);  // 正確計算 labelNorm
-  const valuesNorm = values.map(v => normalizeText(v));  // 正確計算 valuesNorm
-  index[f.type] = index[f.type] || [];
-  index[f.type].push({ label, labelNorm, type: f.type, values, valuesNorm });
+if (filledCount === 0) {
+  const totalFields = items.length;
+  const supportedFields = items.filter(item => {
+    const title = extractTitleText(item);
+    const type = detectType(item);
+    return title && type !== 'unknown';
+  }).length;
+  
+  if (supportedFields === 0) {
+    return { ok: false, error: '此表單沒有可識別的欄位，請確認是否為支援的表單類型' };
+  } else if (totalFields > 0) {
+    return { ok: false, error: `找到 ${supportedFields} 個欄位但無匹配的範本資料，請檢查範本是否適用於此表單` };
+  } else {
+    return { ok: false, error: '未找到匹配的欄位，請確認範本是否適用於此表單' };
+  }
 }
 ```
 
-### 2. 修復自動下一步功能
-```javascript
-// 擴展按鈕選擇器
-const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], div[role="button"]'));
+### 2. 修復自動下一步 UI 版面配置
 
-// 增加調試信息
-console.log(`Found ${allButtons.length} total buttons, ${validButtons.length} valid buttons`);
-if (validButtons.length > 0) {
-  console.log('Top 3 button candidates:', validButtons.slice(0, 3).map(b => ({ text: b.text, score: b.score })));
+**問題原因**：`.auto-next-section` 的 padding 和對齊方式導致內容靠上，整體高度過高。
+
+**修復內容**：
+- 調整 padding 為四周均等
+- 使用 flexbox 實現垂直和水平置中
+- 設定最小高度並確保內容置中
+- 限制最大寬度以改善視覺效果
+
+```css
+.auto-next-section {
+  padding: var(--spacing);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
 }
 
-// 改善按鈕點擊檢查
-const rect = button.getBoundingClientRect();
-if (rect.width > 0 && rect.height > 0) {
-  button.click();
-  return true;
+.auto-next-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 300px;
 }
 ```
 
-### 3. 增加調試功能
-- 為範本匹配添加詳細的調試日誌
-- 為自動下一步功能添加狀態追蹤
-- 改善錯誤處理和用戶反饋
+### 3. 修復自動下一步功能
 
-## 預期效果
+**問題原因**：按鈕檢測邏輯不夠完善，缺乏多種點擊方法的嘗試，等待時間不足。
 
-修復後，以下功能應該正常運作：
+**修復內容**：
 
-1. **編輯過的範本**：現在可以正確進行相似度匹配，自動填入表單欄位
-2. **自動下一步**：增強了按鈕檢測能力，應該能夠自動點擊「下一步」按鈕
-3. **調試能力**：增加了詳細的日誌輸出，便於排查問題
+#### 3.1 改進按鈕檢測算法
+- 降低相似度閾值從 0.2 到 0.15，提高匹配成功率
+- 增加部分匹配邏輯，檢查關鍵詞重疊
+- 改進評分系統，精確匹配獲得更高分數
+- 增加視窗內可見性檢查
+
+#### 3.2 增強按鈕點擊機制
+- 添加多種點擊方法：`click()`, `MouseEvent`, `Event`
+- 點擊前滾動按鈕到視窗中央
+- 增加等待時間讓動態內容載入完成
+
+#### 3.3 改進等待時機
+- 表單填寫後等待時間從 1000ms 增加到 1500ms
+- 按鈕檢測前增加 500ms 等待動態內容載入
+- 點擊前增加 200ms 等待滾動完成
+
+```javascript
+// 改進的按鈕檢測和點擊邏輯
+async function findAndClickNextButton() {
+  // 等待動態內容載入
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // 改進的評分系統
+  for (const keyword of nextKeywords) {
+    const keywordLower = keyword.toLowerCase();
+    if (text === keywordLower) {
+      score += 20; // 精確匹配
+    } else if (text.includes(keywordLower)) {
+      score += 10; // 部分匹配
+    }
+  }
+  
+  // 多種點擊方法
+  try {
+    button.click();
+  } catch (e1) {
+    try {
+      button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    } catch (e2) {
+      button.dispatchEvent(new Event('click', { bubbles: true, cancelable: true }));
+    }
+  }
+}
+```
+
+## 修復效果
+
+### 1. 錯誤診斷改善
+- 提供更精確的錯誤訊息
+- 區分不同失敗原因
+- 顯示實際檢測到的欄位數量
+
+### 2. UI 版面優化
+- 自動下一步控制項現在垂直置中
+- 整體高度更合理
+- 視覺效果更平衡
+
+### 3. 自動下一步功能增強
+- 提高按鈕檢測成功率
+- 支援更多語言和按鈕樣式
+- 更穩定的點擊機制
+- 更好的時機控制
 
 ## 測試建議
 
-1. 建立一個範本並進行編輯
-2. 在支援的表單網站上測試範本套用功能
-3. 確認自動下一步功能是否正常運作
-4. 檢查瀏覽器控制台的調試信息
+1. **錯誤訊息測試**：在不同類型的表單上測試，確認錯誤訊息更準確
+2. **UI 版面測試**：檢查自動下一步區域是否置中顯示
+3. **自動下一步測試**：在各種表單上測試自動點擊功能是否正常運作
 
-這些修復應該解決您提到的兩個主要問題。
+這些修復應該能解決用戶提到的所有問題，提供更好的用戶體驗和更穩定的功能運作。
