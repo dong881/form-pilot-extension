@@ -173,7 +173,7 @@ function setTextValue(item, value) {
 
 // Enhanced auto-next functionality with intelligent button detection
 async function findAndClickNextButton() {
-  // Get all potential buttons on the page
+  // Get all potential buttons on the page using valid CSS selectors
   const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'));
   
   // Keywords that indicate "next" or "continue" actions in multiple languages
