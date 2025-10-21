@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Form Pilot: Google Forms Autofill",
+  "version": "0.1.0",
+  "description": "Fuzzy-match autofill for Google Forms with import/exportable local database.",
+  "permissions": ["storage", "scripting", "activeTab", "tabs"],
+  "host_permissions": ["https://docs.google.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Form Pilot",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/forms/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["db.js", "fuzzy.js", "popup.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Form Pilot</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="header">
+        <div class="brand">Form Pilot</div>
+        <label class="switch">
+          <input type="checkbox" id="autorunToggle" />
+          <span class="slider"></span>
+        </label>
+      </header>
+
+      <section class="controls">
+        <button id="fillNow" class="btn primary">一鍵填寫</button>
+        <button id="capture" class="btn">擷取此表單為範本</button>
+      </section>
+
+      <section class="import-export">
+        <div class="row">
+          <label for="importFile" class="btn">匯入資料庫</label>
+          <input type="file" id="importFile" accept="application/json" hidden />
+          <button id="exportBtn" class="btn">匯出資料庫</button>
+        </div>
+      </section>
+
+      <section class="entries">
+        <h3>範本</h3>
+        <ul id="entryList" class="entry-list"></ul>
+      </section>
+
+      <footer class="footer">
+        <span id="status"></span>
+      </footer>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
