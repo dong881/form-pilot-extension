@@ -389,22 +389,22 @@ function isSubmitScreen() {
     return true;
   }
   
-  // Check for form completion indicators
-  const completionTexts = [
-    'thank you', 'thanks', 'completed', 'finished', 'done',
-    '謝謝', '感謝', '已完成', '完成', '結束',
-    'gracias', 'completado', 'terminado', 'hecho',
-    'merci', 'complété', 'terminé', 'fini',
-    'ありがとう', '完了', '終了', '済み',
-    '감사합니다', '완료', '마침', '끝'
-  ];
+  // // Check for form completion indicators
+  // const completionTexts = [
+  //   'thank you', 'thanks', 'completed', 'finished', 'done',
+  //   '謝謝', '感謝', '已完成', '完成', '結束',
+  //   'gracias', 'completado', 'terminado', 'hecho',
+  //   'merci', 'complété', 'terminé', 'fini',
+  //   'ありがとう', '完了', '終了', '済み',
+  //   '감사합니다', '완료', '마침', '끝'
+  // ];
   
-  const bodyText = document.body.textContent.toLowerCase();
-  for (const text of completionTexts) {
-    if (bodyText.includes(text)) {
-      return true;
-    }
-  }
+  // const bodyText = document.body.textContent.toLowerCase();
+  // for (const text of completionTexts) {
+  //   if (bodyText.includes(text)) {
+  //     return true;
+  //   }
+  // }
   
   // Additional check: Look for continue/next buttons vs submit buttons
   const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'));
