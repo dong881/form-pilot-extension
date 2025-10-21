@@ -1,61 +1,39 @@
-# Form Pilot Extension - UI Alignment and Auto-Fill Fixes
+# 修復自動繼續提交螢幕問題
 
-## Issues Fixed
-
-### 1. UI Alignment Issues
-- **Problem**: Import/export buttons were too close to the auto-next section and too far from the entries section
-- **Solution**: 
-  - Added proper spacing with `margin-bottom: var(--spacing-xs)` to auto-next section
-  - Centered import/export buttons with flexbox layout
-  - Added max-width constraint and proper alignment for the button row
-
-### 2. Auto-Click Next Button Functionality
-- **Problem**: Auto-click next button was not working properly
-- **Solution**:
-  - Increased wait time from 500ms to 1000ms for dynamic content to load
-  - Added support for `span[role="button"]` elements
-  - Enhanced next button keywords with more variations including "next step", "continue to next", etc.
-  - Improved button detection logic for better reliability
-
-### 3. Field Type Preservation After Editing
-- **Problem**: After editing templates, all field types were disappearing, causing auto-fill to fail
-- **Solution**:
-  - Added hidden input field to preserve field type during editing
-  - Updated the `saveTemplate` function to properly handle the `type` property
-  - Ensured field types are maintained when updating template entries
-
-## Technical Details
-
-### CSS Changes
-```css
-.auto-next-section {
-  margin-bottom: var(--spacing-xs);
-}
-
-.import-export {
-  padding: var(--spacing);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.import-export .row {
-  display: flex;
-  gap: var(--spacing-xs);
-  width: 100%;
-  max-width: 300px;
-  justify-content: center;
-}
+## 問題分析
+根據您提供的日誌，問題出現在 `content.js:178` 行：
+```
+Detected submit screen - stopping auto-continue
 ```
 
-### JavaScript Changes
-- Enhanced button detection with more comprehensive selectors
-- Added field type preservation in template editor
-- Improved auto-click timing and reliability
-- Extended keyword matching for better next button detection
+這表示 `isSubmitScreen()` 函數錯誤地將當前頁面識別為提交螢幕，導致自動繼續功能停止。但實際上頁面上只有「繼續」按鈕，沒有「提交」按鈕。
 
-## Result
-- UI elements are now properly aligned and centered
-- Auto-click functionality works more reliably
-- Template editing preserves field types, ensuring auto-fill continues to work after edits
-- Better user experience with improved spacing and alignment
+## 解決方案
+我已經對 `extension/content.js` 進行了以下修改：
+
+### 1. 改進提交螢幕檢測邏輯
+- 使提交關鍵詞檢測更加精確，避免誤判
+- 移除了過於寬泛的關鍵詞匹配
+- 增加了按鈕類型分析，比較「繼續」按鈕和「提交」按鈕的數量
+
+### 2. 優化按鈕檢測
+- 改進了提交關鍵詞列表，使其更加具體
+- 增加了調試日誌來幫助診斷問題
+
+### 3. 增加調試信息
+- 添加了詳細的日誌輸出，顯示按鈕分析結果
+- 可以清楚看到檢測到的「繼續」按鈕和「提交」按鈕數量
+
+## 修改內容
+主要修改了 `isSubmitScreen()` 函數，使其：
+1. 更精確地識別真正的提交螢幕
+2. 通過比較「繼續」和「提交」按鈕數量來判斷是否為提交螢幕
+3. 提供詳細的調試信息
+
+## 預期效果
+修改後，當頁面上只有「繼續」按鈕時，系統應該：
+1. 正確識別這不是提交螢幕
+2. 繼續執行自動繼續功能
+3. 成功點擊「繼續」按鈕進入下一步
+
+請重新測試擴展功能，現在應該能夠正確處理只有「繼續」按鈕的情況。
