@@ -171,31 +171,108 @@ function setTextValue(item, value) {
   return false;
 }
 
-// Auto-next functionality
+// Enhanced auto-next functionality with intelligent button detection
 async function findAndClickNextButton() {
-  // Common next button selectors
-  const nextSelectors = [
-    'button[type="submit"]:not([value*="送出"]):not([value*="提交"]):not([value*="Submit"])',
-    'input[type="submit"]:not([value*="送出"]):not([value*="提交"]):not([value*="Submit"])',
-    'button:contains("下一步"), button:contains("Next"), button:contains("繼續")',
-    'input[value*="下一步"], input[value*="Next"], input[value*="繼續"]',
-    '.next-button, .btn-next, .continue-btn',
-    '[role="button"]:contains("下一步"), [role="button"]:contains("Next")'
+  // Get all potential buttons on the page
+  const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'));
+  
+  // Keywords that indicate "next" or "continue" actions in multiple languages
+  const nextKeywords = [
+    'next', 'continue', 'proceed', 'forward', 'advance', 'go',
+    '下一步', '繼續', '繼續進行', '前進', '進行', '前往',
+    'siguiente', 'continuar', 'proceder', 'avanzar',
+    'suivant', 'continuer', 'procéder', 'avancer',
+    '次へ', '続行', '進む', '次に',
+    '다음', '계속', '진행', '다음으로'
   ];
   
-  for (const selector of nextSelectors) {
-    const buttons = Array.from(document.querySelectorAll(selector));
-    for (const btn of buttons) {
-      const text = (btn.textContent || btn.value || '').toLowerCase();
-      if (text.includes('下一步') || text.includes('next') || text.includes('繼續') || text.includes('continue')) {
-        // Check if it's not a submit button
-        if (!text.includes('送出') && !text.includes('提交') && !text.includes('submit')) {
-          btn.click();
-          return true;
-        }
+  // Keywords that indicate final submission (should be avoided)
+  const submitKeywords = [
+    'submit', 'send', 'finish', 'complete', 'done', 'send', 'submit form',
+    '送出', '提交', '完成', '結束', '發送', '提交表單',
+    'enviar', 'finalizar', 'completar', 'terminar',
+    'envoyer', 'terminer', 'compléter', 'finir',
+    '送信', '完了', '終了', '提出',
+    '제출', '완료', '마침', '보내기'
+  ];
+  
+  // Score buttons based on their text content and attributes
+  const scoredButtons = allButtons.map(btn => {
+    const text = (btn.textContent || btn.value || btn.getAttribute('aria-label') || '').toLowerCase().trim();
+    const type = btn.type || '';
+    const className = btn.className || '';
+    const id = btn.id || '';
+    
+    let score = 0;
+    
+    // Check for next/continue keywords
+    for (const keyword of nextKeywords) {
+      if (text.includes(keyword.toLowerCase())) {
+        score += 10;
       }
     }
+    
+    // Check for submit keywords (negative score)
+    for (const keyword of submitKeywords) {
+      if (text.includes(keyword.toLowerCase())) {
+        score -= 15;
+      }
+    }
+    
+    // Boost score for common next button patterns
+    if (className.includes('next') || className.includes('continue') || className.includes('proceed')) {
+      score += 5;
+    }
+    
+    if (id.includes('next') || id.includes('continue') || id.includes('proceed')) {
+      score += 5;
+    }
+    
+    // Boost for buttons that are not submit type
+    if (type !== 'submit') {
+      score += 3;
+    }
+    
+    // Boost for buttons with arrow icons or similar visual indicators
+    if (btn.querySelector('svg, i, span[class*="arrow"], span[class*="chevron"]')) {
+      score += 2;
+    }
+    
+    // Check if button is visible and clickable
+    const rect = btn.getBoundingClientRect();
+    const isVisible = rect.width > 0 && rect.height > 0 && 
+                     getComputedStyle(btn).visibility !== 'hidden' &&
+                     getComputedStyle(btn).display !== 'none';
+    
+    if (!isVisible) {
+      score = -100; // Make invisible buttons very unlikely to be selected
+    }
+    
+    // Check if button is disabled
+    if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') {
+      score = -50;
+    }
+    
+    return { button: btn, score, text };
+  });
+  
+  // Sort by score (highest first) and filter out negative scores
+  const validButtons = scoredButtons
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+  
+  // Try clicking the highest scored button
+  for (const { button, score, text } of validButtons) {
+    try {
+      console.log(`Attempting to click button with score ${score}: "${text}"`);
+      button.click();
+      return true;
+    } catch (error) {
+      console.log(`Failed to click button: ${error.message}`);
+      continue;
+    }
   }
+  
   return false;
 }
 
