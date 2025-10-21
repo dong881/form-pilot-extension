@@ -54,6 +54,7 @@ async function openTemplateEditor(entryId) {
       <label>欄位 ${i + 1}: ${escapeHtml(field.label)} (${field.type})</label>
       <input type="text" data-field-index="${i}" data-field-property="label" value="${escapeHtml(field.label)}" />
       <input type="text" data-field-index="${i}" data-field-property="values" value="${escapeHtml((field.values || []).join(', '))}" placeholder="多個值用逗號分隔" />
+      <input type="hidden" data-field-index="${i}" data-field-property="type" value="${escapeHtml(field.type)}" />
     `;
     fieldsContainer.appendChild(fieldDiv);
   }
@@ -88,6 +89,8 @@ async function saveTemplate() {
     const field = fieldMap.get(index);
     if (property === 'values') {
       field.values = input.value.split(',').map(v => v.trim()).filter(Boolean);
+    } else if (property === 'type') {
+      field.type = input.value;
     } else {
       field[property] = input.value;
     }
