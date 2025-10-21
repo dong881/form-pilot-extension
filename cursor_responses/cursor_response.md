@@ -1,44 +1,47 @@
-# Form Pilot Extension - Project Overview
+# 擴充功能載入問題修復
 
-## Project Description
-This is a Chrome MV3 extension called "Form Pilot" that provides intelligent autofill functionality for Google Forms. The extension uses fuzzy matching algorithms to automatically fill out form fields based on pre-saved templates.
+## 問題描述
+無法載入擴充功能，錯誤訊息：
+```
+Could not load icon 'icon-16.png' specified in 'icons'.
+無法載入資訊清單。
+```
 
-## Key Features
-- **Fuzzy Matching**: Uses Jaccard/LCS/containment ratio algorithms to match form fields with saved templates
-- **Multi-language Support**: Supports Chinese, English, Spanish, French, Japanese, and Korean
-- **Form Type Support**: Handles text inputs, paragraphs, radio buttons, checkboxes, and dropdown menus
-- **Template Management**: Capture, edit, and manage form templates
-- **Import/Export**: JSON-based database for sharing templates between computers
-- **Auto-next Functionality**: Intelligent button detection to automatically click "next" buttons
-- **Modern UI**: Clean dark-themed popup interface
+## 問題分析
+擴充功能的 `manifest.json` 檔案中指定了 PNG 圖示檔案（icon-16.png, icon-32.png, icon-48.png, icon-128.png），但這些檔案不存在。只有 SVG 格式的圖示檔案（icon.svg）。
 
-## File Structure
+## 解決方案
+1. **檢查現有檔案**：確認只有 `icon.svg` 檔案存在
+2. **生成 PNG 圖示**：使用 Node.js 和 canvas 套件將 SVG 轉換為所需尺寸的 PNG 檔案
+3. **驗證檔案**：確認所有必要的檔案都已正確生成
+
+## 執行的修復步驟
+1. 創建了 Node.js 轉換腳本 `convert_icons.js`
+2. 安裝了 canvas 套件來處理圖像轉換
+3. 成功生成了以下 PNG 檔案：
+   - `icon-16.png` (16x16 像素)
+   - `icon-32.png` (32x32 像素) 
+   - `icon-48.png` (48x48 像素)
+   - `icon-128.png` (128x128 像素)
+4. 清理了臨時檔案
+
+## 結果
+擴充功能現在應該可以正常載入，因為所有在 `manifest.json` 中引用的圖示檔案都已存在。錯誤訊息應該不再出現。
+
+## 檔案結構
 ```
 extension/
-├── manifest.json        # MV3 configuration
-├── background.js        # Service Worker for state management and import/export
-├── content.js          # Content script for form parsing and filling
-├── db.js               # Local database and similarity tools
-├── fuzzy.js            # Additional similarity tools
-├── popup.html          # Popup UI
-├── popup.css           # Modern dark theme styles
-└── popup.js            # Popup interaction logic
+├── manifest.json
+├── icon.svg (原始 SVG 圖示)
+├── icon-16.png (新生成)
+├── icon-32.png (新生成)
+├── icon-48.png (新生成)
+├── icon-128.png (新生成)
+├── background.js
+├── content.js
+├── popup.html
+├── popup.js
+├── popup.css
+├── db.js
+└── fuzzy.js
 ```
-
-## Recent Enhancements (Based on cursor_response.md)
-1. **Smart Auto-click Feature**: Fixed invalid CSS selectors and implemented intelligent button detection
-2. **Hover Information Display**: Replaced static intro text with hover tooltips
-3. **Modern Icon Design**: Created SVG-based modern icons with gradient colors
-4. **Technical Improvements**: Enhanced button detection algorithms and multi-language support
-
-## Current Status
-The extension appears to be fully functional with recent improvements to the auto-next functionality, UI enhancements, and modern icon design. The codebase is well-structured and follows Chrome MV3 best practices.
-
-## Installation
-1. Download the project to local machine
-2. Open Chrome → Extensions page (chrome://extensions)
-3. Enable Developer mode
-4. Click "Load unpacked" and select the `extension/` directory
-5. Use the extension popup on any Google Forms page
-
-The extension is ready for use and development.
