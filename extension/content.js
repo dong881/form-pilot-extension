@@ -179,27 +179,30 @@ async function findAndClickNextButton() {
     return false;
   }
   
+  // Wait a bit for any dynamic content to load
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
   // Get all potential buttons on the page using valid CSS selectors
   const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], div[role="button"]'));
   
   // Keywords that indicate "next" or "continue" actions in multiple languages
   const nextKeywords = [
-    'next', 'continue', 'proceed', 'forward', 'advance', 'go',
-    '下一步', '繼續', '繼續進行', '前進', '進行', '前往',
-    'siguiente', 'continuar', 'proceder', 'avanzar',
-    'suivant', 'continuer', 'procéder', 'avancer',
-    '次へ', '続行', '進む', '次に',
-    '다음', '계속', '진행', '다음으로'
+    'next', 'continue', 'proceed', 'forward', 'advance', 'go', 'next page', 'continue to',
+    '下一步', '繼續', '繼續進行', '前進', '進行', '前往', '下一頁', '繼續到',
+    'siguiente', 'continuar', 'proceder', 'avanzar', 'página siguiente',
+    'suivant', 'continuer', 'procéder', 'avancer', 'page suivante',
+    '次へ', '続行', '進む', '次に', '次のページ',
+    '다음', '계속', '진행', '다음으로', '다음 페이지'
   ];
   
   // Keywords that indicate final submission (should be avoided)
   const submitKeywords = [
-    'submit', 'send', 'finish', 'complete', 'done', 'send', 'submit form',
-    '送出', '提交', '完成', '結束', '發送', '提交表單',
-    'enviar', 'finalizar', 'completar', 'terminar',
-    'envoyer', 'terminer', 'compléter', 'finir',
-    '送信', '完了', '終了', '提出',
-    '제출', '완료', '마침', '보내기'
+    'submit', 'send', 'finish', 'complete', 'done', 'submit form', 'final submit',
+    '送出', '提交', '完成', '結束', '發送', '提交表單', '最終提交',
+    'enviar', 'finalizar', 'completar', 'terminar', 'enviar formulario',
+    'envoyer', 'terminer', 'compléter', 'finir', 'envoyer formulaire',
+    '送信', '完了', '終了', '提出', 'フォーム送信',
+    '제출', '완료', '마침', '보내기', '폼 제출'
   ];
   
   // Score buttons based on their text content and attributes
@@ -211,37 +214,43 @@ async function findAndClickNextButton() {
     
     let score = 0;
     
-    // Check for next/continue keywords
+    // Check for next/continue keywords (exact match gets higher score)
     for (const keyword of nextKeywords) {
-      if (text.includes(keyword.toLowerCase())) {
-        score += 10;
+      const keywordLower = keyword.toLowerCase();
+      if (text === keywordLower) {
+        score += 20; // Exact match
+      } else if (text.includes(keywordLower)) {
+        score += 10; // Partial match
       }
     }
     
     // Check for submit keywords (negative score)
     for (const keyword of submitKeywords) {
-      if (text.includes(keyword.toLowerCase())) {
-        score -= 15;
+      const keywordLower = keyword.toLowerCase();
+      if (text === keywordLower) {
+        score -= 25; // Exact match gets heavy penalty
+      } else if (text.includes(keywordLower)) {
+        score -= 15; // Partial match gets penalty
       }
     }
     
     // Boost score for common next button patterns
     if (className.includes('next') || className.includes('continue') || className.includes('proceed')) {
-      score += 5;
+      score += 8;
     }
     
     if (id.includes('next') || id.includes('continue') || id.includes('proceed')) {
-      score += 5;
+      score += 8;
     }
     
     // Boost for buttons that are not submit type
     if (type !== 'submit') {
-      score += 3;
+      score += 5;
     }
     
     // Boost for buttons with arrow icons or similar visual indicators
-    if (btn.querySelector('svg, i, span[class*="arrow"], span[class*="chevron"]')) {
-      score += 2;
+    if (btn.querySelector('svg, i, span[class*="arrow"], span[class*="chevron"], span[class*="right"]')) {
+      score += 3;
     }
     
     // Check if button is visible and clickable
@@ -259,6 +268,15 @@ async function findAndClickNextButton() {
       score = -50;
     }
     
+    // Check if button is in viewport
+    const isInViewport = rect.top >= 0 && rect.left >= 0 && 
+                        rect.bottom <= window.innerHeight && 
+                        rect.right <= window.innerWidth;
+    
+    if (isInViewport) {
+      score += 5; // Slight boost for buttons in viewport
+    }
+    
     return { button: btn, score, text };
   });
   
@@ -269,7 +287,7 @@ async function findAndClickNextButton() {
   
   console.log(`Found ${allButtons.length} total buttons, ${validButtons.length} valid buttons`);
   if (validButtons.length > 0) {
-    console.log('Top 3 button candidates:', validButtons.slice(0, 3).map(b => ({ text: b.text, score: b.score })));
+    console.log('Top 5 button candidates:', validButtons.slice(0, 5).map(b => ({ text: b.text, score: b.score })));
   }
   
   // Try clicking the highest scored button
@@ -279,7 +297,27 @@ async function findAndClickNextButton() {
       // Ensure the button is still visible and clickable
       const rect = button.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        button.click();
+        // Scroll button into view if needed
+        button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Try multiple click methods
+        try {
+          button.click();
+        } catch (e1) {
+          try {
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          } catch (e2) {
+            try {
+              button.dispatchEvent(new Event('click', { bubbles: true, cancelable: true }));
+            } catch (e3) {
+              console.log(`All click methods failed for button: ${text}`);
+              continue;
+            }
+          }
+        }
+        
+        console.log(`Successfully clicked button: "${text}"`);
         return true;
       } else {
         console.log(`Button is no longer visible, skipping`);
@@ -291,6 +329,7 @@ async function findAndClickNextButton() {
     }
   }
   
+  console.log('No suitable next button found');
   return false;
 }
 
@@ -374,8 +413,8 @@ async function fillUsingIndexWithAutoNext(index, autoNext = false) {
   
   if (autoNext && result.ok) {
     console.log('Auto-next enabled, attempting to find and click next button...');
-    // Wait a bit for form to process
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait a bit for form to process and any validation to complete
+    await new Promise(resolve => setTimeout(resolve, 1500));
     const nextClicked = await findAndClickNextButton();
     if (nextClicked) {
       console.log('Auto-clicked next button successfully');
@@ -392,10 +431,41 @@ function pickBestFieldMatch(questionTitle, type, index) {
   const qn = normalizeText(questionTitle);
   let best = null;
   let bestScore = 0;
+  
   for (const c of candidates) {
     const sc = computeSimilarity(qn, c.labelNorm || normalizeText(c.label));
-    if (sc > bestScore) { best = c; bestScore = sc; }
+    if (sc > bestScore) { 
+      best = c; 
+      bestScore = sc; 
+    }
   }
+  
+  // If no good match found, try partial matching
+  if (!best || bestScore < 0.15) {
+    for (const c of candidates) {
+      const labelNorm = c.labelNorm || normalizeText(c.label);
+      // Check if question title contains any significant words from the label
+      const qnWords = qn.split(' ').filter(w => w.length > 2);
+      const labelWords = labelNorm.split(' ').filter(w => w.length > 2);
+      
+      let wordMatches = 0;
+      for (const qw of qnWords) {
+        for (const lw of labelWords) {
+          if (qw.includes(lw) || lw.includes(qw)) {
+            wordMatches++;
+            break;
+          }
+        }
+      }
+      
+      const partialScore = wordMatches / Math.max(qnWords.length, labelWords.length);
+      if (partialScore > 0.3 && partialScore > bestScore) {
+        best = c;
+        bestScore = partialScore;
+      }
+    }
+  }
+  
   return { best, bestScore };
 }
 
@@ -413,7 +483,7 @@ async function fillUsingIndex(index) {
     if (!title || type === 'unknown') continue;
     const { best, bestScore } = pickBestFieldMatch(title, type, index);
     console.log(`Field "${title}" (${type}): best match score = ${bestScore ? bestScore.toFixed(3) : 'none'}`);
-    if (!best || bestScore < 0.2) continue; // Lower threshold for broader matching
+    if (!best || bestScore < 0.15) continue; // Even lower threshold for broader matching
 
     if (type === 'text' || type === 'paragraph') {
       const v = best.values?.[0] || '';
@@ -466,7 +536,20 @@ async function fillUsingIndex(index) {
   }
   
   if (filledCount === 0) {
-    return { ok: false, error: '未找到匹配的欄位，請確認範本是否適用於此表單' };
+    const totalFields = items.length;
+    const supportedFields = items.filter(item => {
+      const title = extractTitleText(item);
+      const type = detectType(item);
+      return title && type !== 'unknown';
+    }).length;
+    
+    if (supportedFields === 0) {
+      return { ok: false, error: '此表單沒有可識別的欄位，請確認是否為支援的表單類型' };
+    } else if (totalFields > 0) {
+      return { ok: false, error: `找到 ${supportedFields} 個欄位但無匹配的範本資料，請檢查範本是否適用於此表單` };
+    } else {
+      return { ok: false, error: '未找到匹配的欄位，請確認範本是否適用於此表單' };
+    }
   }
   
   return { ok: true, filledCount };
