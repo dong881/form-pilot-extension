@@ -1,42 +1,44 @@
-# Form Pilot Extension Enhancements
+# Form Pilot Extension - Project Overview
 
-## 完成的改進
+## Project Description
+This is a Chrome MV3 extension called "Form Pilot" that provides intelligent autofill functionality for Google Forms. The extension uses fuzzy matching algorithms to automatically fill out form fields based on pre-saved templates.
 
-### 1. 智能自動點擊功能 ✅
-- **問題**: 原本的 `:contains()` 選擇器不是有效的 CSS 選擇器，導致語法錯誤
-- **解決方案**: 
-  - 移除了無效的 `:contains()` 選擇器
-  - 實現了智能按鈕檢測算法，支援多語言關鍵字
-  - 使用評分系統來選擇最合適的「下一步」按鈕
-  - 支援中文、英文、西班牙文、法文、日文、韓文等多種語言
+## Key Features
+- **Fuzzy Matching**: Uses Jaccard/LCS/containment ratio algorithms to match form fields with saved templates
+- **Multi-language Support**: Supports Chinese, English, Spanish, French, Japanese, and Korean
+- **Form Type Support**: Handles text inputs, paragraphs, radio buttons, checkboxes, and dropdown menus
+- **Template Management**: Capture, edit, and manage form templates
+- **Import/Export**: JSON-based database for sharing templates between computers
+- **Auto-next Functionality**: Intelligent button detection to automatically click "next" buttons
+- **Modern UI**: Clean dark-themed popup interface
 
-### 2. 懸停式資訊顯示 ✅
-- **問題**: 介紹欄占用太多版面空間
-- **解決方案**:
-  - 移除了靜態的介紹文字區塊
-  - 在「自動下一步」標籤旁添加了資訊圖標 (ℹ️)
-  - 使用 `title` 屬性在懸停時顯示詳細說明
-  - 節省了寶貴的版面空間
+## File Structure
+```
+extension/
+├── manifest.json        # MV3 configuration
+├── background.js        # Service Worker for state management and import/export
+├── content.js          # Content script for form parsing and filling
+├── db.js               # Local database and similarity tools
+├── fuzzy.js            # Additional similarity tools
+├── popup.html          # Popup UI
+├── popup.css           # Modern dark theme styles
+└── popup.js            # Popup interaction logic
+```
 
-### 3. 現代化圖標設計 ✅
-- **問題**: 需要一個質感現代風格的圖標
-- **解決方案**:
-  - 創建了 SVG 格式的現代化圖標
-  - 設計包含表單文件、自動化魔杖、箭頭等元素
-  - 使用漸層色彩和專業配色方案
-  - 提供了 16x16、32x32、48x48、128x128 多種尺寸
-  - 更新了 manifest.json 以包含新圖標
+## Recent Enhancements (Based on cursor_response.md)
+1. **Smart Auto-click Feature**: Fixed invalid CSS selectors and implemented intelligent button detection
+2. **Hover Information Display**: Replaced static intro text with hover tooltips
+3. **Modern Icon Design**: Created SVG-based modern icons with gradient colors
+4. **Technical Improvements**: Enhanced button detection algorithms and multi-language support
 
-### 4. 技術改進
-- 修復了 CSS 選擇器語法錯誤
-- 優化了按鈕檢測算法，提高準確性
-- 改善了用戶界面，使其更加簡潔
-- 增強了多語言支援
+## Current Status
+The extension appears to be fully functional with recent improvements to the auto-next functionality, UI enhancements, and modern icon design. The codebase is well-structured and follows Chrome MV3 best practices.
 
-## 使用說明
+## Installation
+1. Download the project to local machine
+2. Open Chrome → Extensions page (chrome://extensions)
+3. Enable Developer mode
+4. Click "Load unpacked" and select the `extension/` directory
+5. Use the extension popup on any Google Forms page
 
-1. **自動下一步功能**: 啟用後會智能檢測並自動點擊「下一步」、「繼續」等按鈕
-2. **懸停提示**: 將滑鼠懸停在 ℹ️ 圖標上可查看功能說明
-3. **現代圖標**: 擴充元件現在擁有專業的現代化圖標
-
-所有改進都已完成並測試，擴充元件現在更加智能、美觀且用戶友好。
+The extension is ready for use and development.
