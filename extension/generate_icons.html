@@ -1,136 +1,201 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Icon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .icon-container {
+            display: inline-block;
+            margin: 20px;
+            text-align: center;
+        }
+        .icon {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .size-label {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #666;
+        }
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="canvas16" width="16" height="16"></canvas>
-    <canvas id="canvas32" width="32" height="32"></canvas>
-    <canvas id="canvas48" width="48" height="48"></canvas>
-    <canvas id="canvas128" width="128" height="128"></canvas>
-    
-    <script>
-        function drawIcon(canvas, size) {
-            const ctx = canvas.getContext('2d');
-            const scale = size / 128;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, size, size);
-            
-            // Background circle with gradient
-            const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-            gradient.addColorStop(0, '#3B82F6');
-            gradient.addColorStop(0.5, '#1D4ED8');
-            gradient.addColorStop(1, '#1E40AF');
-            
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(size/2, size/2, size/2 - 2, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            // Form document
-            const docX = 32 * scale;
-            const docY = 24 * scale;
-            const docW = 48 * scale;
-            const docH = 64 * scale;
-            
-            ctx.fillStyle = 'white';
-            ctx.strokeStyle = '#E5E7EB';
-            ctx.lineWidth = 1.5 * scale;
-            ctx.fillRect(docX, docY, docW, docH);
-            ctx.strokeRect(docX, docY, docW, docH);
-            
-            // Form lines
-            ctx.fillStyle = '#6B7280';
-            const lineY = 32 * scale;
-            const lineH = 2 * scale;
-            const lineW = 32 * scale;
-            ctx.fillRect(36 * scale, lineY, lineW, lineH);
-            ctx.fillRect(36 * scale, lineY + 6 * scale, 28 * scale, lineH);
-            ctx.fillRect(36 * scale, lineY + 12 * scale, 30 * scale, lineH);
-            ctx.fillRect(36 * scale, lineY + 18 * scale, 24 * scale, lineH);
-            
-            // Checkbox
-            const checkX = 36 * scale;
-            const checkY = 58 * scale;
-            const checkSize = 12 * scale;
-            ctx.fillStyle = 'white';
-            ctx.strokeStyle = '#10B981';
-            ctx.lineWidth = 2 * scale;
-            ctx.fillRect(checkX, checkY, checkSize, checkSize);
-            ctx.strokeRect(checkX, checkY, checkSize, checkSize);
-            
-            // Checkmark
-            ctx.strokeStyle = '#10B981';
-            ctx.lineWidth = 2 * scale;
-            ctx.beginPath();
-            ctx.moveTo(checkX + 4 * scale, checkY + 4 * scale);
-            ctx.lineTo(checkX + 6 * scale, checkY + 6 * scale);
-            ctx.lineTo(checkX + 10 * scale, checkY + 2 * scale);
-            ctx.stroke();
-            
-            // Radio button
-            const radioX = 52 * scale;
-            const radioY = 64 * scale;
-            const radioR = 6 * scale;
-            ctx.fillStyle = 'white';
-            ctx.strokeStyle = '#3B82F6';
-            ctx.lineWidth = 2 * scale;
-            ctx.beginPath();
-            ctx.arc(radioX, radioY, radioR, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.stroke();
-            
-            // Radio button center
-            ctx.fillStyle = '#3B82F6';
-            ctx.beginPath();
-            ctx.arc(radioX, radioY, 3 * scale, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            // Magic wand
-            const wandX = 70 * scale;
-            const wandY = 20 * scale;
-            ctx.fillStyle = '#F59E0B';
-            ctx.fillRect(wandX, wandY, 4 * scale, 4 * scale);
-            ctx.fillRect(wandX + 4 * scale, wandY + 4 * scale, 4 * scale, 4 * scale);
-            ctx.fillRect(wandX + 8 * scale, wandY, 4 * scale, 4 * scale);
-            ctx.fillRect(wandX + 12 * scale, wandY + 4 * scale, 4 * scale, 4 * scale);
-            
-            // Arrow
-            const arrowX = 88 * scale;
-            const arrowY = 64 * scale;
-            ctx.strokeStyle = '#6B7280';
-            ctx.lineWidth = 2 * scale;
-            ctx.beginPath();
-            ctx.moveTo(arrowX, arrowY);
-            ctx.lineTo(arrowX + 12 * scale, arrowY);
-            ctx.moveTo(arrowX + 8 * scale, arrowY - 4 * scale);
-            ctx.lineTo(arrowX + 12 * scale, arrowY);
-            ctx.lineTo(arrowX + 8 * scale, arrowY + 4 * scale);
-            ctx.stroke();
-        }
-        
-        // Generate all icon sizes
-        drawIcon(document.getElementById('canvas16'), 16);
-        drawIcon(document.getElementById('canvas32'), 32);
-        drawIcon(document.getElementById('canvas48'), 48);
-        drawIcon(document.getElementById('canvas128'), 128);
-        
-        // Download functions
-        function downloadCanvas(canvas, filename) {
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-        
-        // Auto-download all icons
-        setTimeout(() => {
-            downloadCanvas(document.getElementById('canvas16'), 'icon-16.png');
-            downloadCanvas(document.getElementById('canvas32'), 'icon-32.png');
-            downloadCanvas(document.getElementById('canvas48'), 'icon-48.png');
-            downloadCanvas(document.getElementById('canvas128'), 'icon-128.png');
-        }, 1000);
-    </script>
+    <div class="instructions">
+        <h2>Icon Generator Instructions</h2>
+        <p>Right-click on each icon below and select "Save image as..." to save them as PNG files:</p>
+        <ul>
+            <li>icon-16.png (16x16 pixels)</li>
+            <li>icon-32.png (32x32 pixels)</li>
+            <li>icon-48.png (48x48 pixels)</li>
+            <li>icon-128.png (128x128 pixels)</li>
+        </ul>
+    </div>
+
+    <div class="icon-container">
+        <div class="icon">
+            <svg width="16" height="16" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background circle with modern gradient -->
+                <circle cx="64" cy="64" r="56" fill="url(#bgGradient)" stroke="url(#borderGradient)" stroke-width="3"/>
+                
+                <!-- Simple form document -->
+                <rect x="32" y="28" width="64" height="72" rx="6" fill="white" stroke="#E5E7EB" stroke-width="2"/>
+                
+                <!-- Form lines - simplified -->
+                <rect x="40" y="40" width="48" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="50" width="40" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="60" width="44" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="70" width="36" height="3" rx="1.5" fill="#6B7280"/>
+                
+                <!-- Simple checkmark for automation -->
+                <circle cx="52" cy="84" r="8" fill="#10B981" stroke="white" stroke-width="2"/>
+                <path d="M48 84L50 86L56 80" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Modern arrow indicating automation -->
+                <path d="M72 84L88 84M84 80L88 84L84 88" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Gradients -->
+                <defs>
+                    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <div class="size-label">16x16</div>
+    </div>
+
+    <div class="icon-container">
+        <div class="icon">
+            <svg width="32" height="32" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background circle with modern gradient -->
+                <circle cx="64" cy="64" r="56" fill="url(#bgGradient2)" stroke="url(#borderGradient2)" stroke-width="3"/>
+                
+                <!-- Simple form document -->
+                <rect x="32" y="28" width="64" height="72" rx="6" fill="white" stroke="#E5E7EB" stroke-width="2"/>
+                
+                <!-- Form lines - simplified -->
+                <rect x="40" y="40" width="48" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="50" width="40" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="60" width="44" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="70" width="36" height="3" rx="1.5" fill="#6B7280"/>
+                
+                <!-- Simple checkmark for automation -->
+                <circle cx="52" cy="84" r="8" fill="#10B981" stroke="white" stroke-width="2"/>
+                <path d="M48 84L50 86L56 80" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Modern arrow indicating automation -->
+                <path d="M72 84L88 84M84 80L88 84L84 88" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Gradients -->
+                <defs>
+                    <linearGradient id="bgGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="borderGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <div class="size-label">32x32</div>
+    </div>
+
+    <div class="icon-container">
+        <div class="icon">
+            <svg width="48" height="48" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background circle with modern gradient -->
+                <circle cx="64" cy="64" r="56" fill="url(#bgGradient3)" stroke="url(#borderGradient3)" stroke-width="3"/>
+                
+                <!-- Simple form document -->
+                <rect x="32" y="28" width="64" height="72" rx="6" fill="white" stroke="#E5E7EB" stroke-width="2"/>
+                
+                <!-- Form lines - simplified -->
+                <rect x="40" y="40" width="48" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="50" width="40" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="60" width="44" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="70" width="36" height="3" rx="1.5" fill="#6B7280"/>
+                
+                <!-- Simple checkmark for automation -->
+                <circle cx="52" cy="84" r="8" fill="#10B981" stroke="white" stroke-width="2"/>
+                <path d="M48 84L50 86L56 80" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Modern arrow indicating automation -->
+                <path d="M72 84L88 84M84 80L88 84L84 88" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Gradients -->
+                <defs>
+                    <linearGradient id="bgGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="borderGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <div class="size-label">48x48</div>
+    </div>
+
+    <div class="icon-container">
+        <div class="icon">
+            <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background circle with modern gradient -->
+                <circle cx="64" cy="64" r="56" fill="url(#bgGradient4)" stroke="url(#borderGradient4)" stroke-width="3"/>
+                
+                <!-- Simple form document -->
+                <rect x="32" y="28" width="64" height="72" rx="6" fill="white" stroke="#E5E7EB" stroke-width="2"/>
+                
+                <!-- Form lines - simplified -->
+                <rect x="40" y="40" width="48" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="50" width="40" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="60" width="44" height="3" rx="1.5" fill="#6B7280"/>
+                <rect x="40" y="70" width="36" height="3" rx="1.5" fill="#6B7280"/>
+                
+                <!-- Simple checkmark for automation -->
+                <circle cx="52" cy="84" r="8" fill="#10B981" stroke="white" stroke-width="2"/>
+                <path d="M48 84L50 86L56 80" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Modern arrow indicating automation -->
+                <path d="M72 84L88 84M84 80L88 84L84 88" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Gradients -->
+                <defs>
+                    <linearGradient id="bgGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="borderGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <div class="size-label">128x128</div>
+    </div>
 </body>
 </html>
