@@ -174,7 +174,9 @@ function setTextValue(item, value) {
 // Enhanced auto-next functionality with intelligent button detection
 async function findAndClickNextButton() {
   // First, check if we're on a submit screen - if so, don't auto-continue
-  if (isSubmitScreen()) {
+  const isSubmit = isSubmitScreen();
+  console.log('Submit screen check result:', isSubmit);
+  if (isSubmit) {
     console.log('Detected submit screen - stopping auto-continue');
     return false;
   }
@@ -197,12 +199,12 @@ async function findAndClickNextButton() {
   
   // Keywords that indicate final submission (should be avoided)
   const submitKeywords = [
-    'submit', 'send', 'finish', 'complete', 'done', 'submit form', 'final submit',
-    '送出', '提交', '完成', '結束', '發送', '提交表單', '最終提交',
-    'enviar', 'finalizar', 'completar', 'terminar', 'enviar formulario',
-    'envoyer', 'terminer', 'compléter', 'finir', 'envoyer formulaire',
-    '送信', '完了', '終了', '提出', 'フォーム送信',
-    '제출', '완료', '마침', '보내기', '폼 제출'
+    'submit form', 'final submit', 'send form', 'submit your response', 'submit response',
+    '提交表單', '最終提交', '發送表單', '提交您的回應', '提交回應',
+    'enviar formulario', 'enviar respuesta final', 'enviar respuesta',
+    'envoyer formulaire', 'envoyer réponse finale', 'envoyer réponse',
+    'フォーム送信', '最終送信', '回答を送信', '送信',
+    '폼 제출', '최종 제출', '응답 제출', '제출'
   ];
   
   // Score buttons based on their text content and attributes
@@ -337,13 +339,13 @@ async function findAndClickNextButton() {
 function isSubmitScreen() {
   // Check for common submit screen indicators
   const submitIndicators = [
-    // Text content indicators
-    'submit', 'send', 'finish', 'complete', 'done', 'submit form',
-    '送出', '提交', '完成', '結束', '發送', '提交表單',
-    'enviar', 'finalizar', 'completar', 'terminar',
-    'envoyer', 'terminer', 'compléter', 'finir',
-    '送信', '完了', '終了', '提出',
-    '제출', '완료', '마침', '보내기',
+    // Text content indicators - be more specific
+    'submit form', 'final submit', 'send form', 'submit your response',
+    '提交表單', '最終提交', '發送表單', '提交您的回應',
+    'enviar formulario', 'enviar respuesta final',
+    'envoyer formulaire', 'envoyer réponse finale',
+    'フォーム送信', '最終送信', '回答を送信',
+    '폼 제출', '최종 제출', '응답 제출',
     // Page title indicators
     'review', 'confirmation', 'summary', 'final', 'submit',
     '檢閱', '確認', '摘要', '最終', '提交',
@@ -362,7 +364,7 @@ function isSubmitScreen() {
   }
   
   // Check for submit buttons that are the primary action
-  const submitButtons = Array.from(document.querySelectorAll('button[type="submit"], input[type="submit"], button:not([type])'));
+  const submitButtons = Array.from(document.querySelectorAll('button[type="submit"], input[type="submit"]'));
   const primaryButtons = submitButtons.filter(btn => {
     const text = (btn.textContent || btn.value || btn.getAttribute('aria-label') || '').toLowerCase().trim();
     const style = getComputedStyle(btn);
@@ -374,7 +376,7 @@ function isSubmitScreen() {
                      style.backgroundColor !== 'rgb(255, 255, 255)' &&
                      rect.width > 0 && rect.height > 0;
     
-    // Check if text contains submit keywords
+    // Check if text contains submit keywords (be more specific)
     const hasSubmitText = submitIndicators.some(indicator => 
       text.includes(indicator.toLowerCase())
     );
@@ -402,6 +404,38 @@ function isSubmitScreen() {
     if (bodyText.includes(text)) {
       return true;
     }
+  }
+  
+  // Additional check: Look for continue/next buttons vs submit buttons
+  const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'));
+  const continueButtons = allButtons.filter(btn => {
+    const text = (btn.textContent || btn.value || btn.getAttribute('aria-label') || '').toLowerCase().trim();
+    return text.includes('continue') || text.includes('next') || text.includes('proceed') ||
+           text.includes('繼續') || text.includes('下一步') || text.includes('進行') ||
+           text.includes('continuar') || text.includes('siguiente') || text.includes('proceder') ||
+           text.includes('continuer') || text.includes('suivant') || text.includes('procéder') ||
+           text.includes('続行') || text.includes('次へ') || text.includes('進む') ||
+           text.includes('계속') || text.includes('다음') || text.includes('진행');
+  });
+  
+  const submitButtonsText = allButtons.filter(btn => {
+    const text = (btn.textContent || btn.value || btn.getAttribute('aria-label') || '').toLowerCase().trim();
+    return text.includes('submit') || text.includes('send') || text.includes('finish') ||
+           text.includes('送出') || text.includes('提交') || text.includes('完成') ||
+           text.includes('enviar') || text.includes('finalizar') || text.includes('completar') ||
+           text.includes('envoyer') || text.includes('terminer') || text.includes('compléter') ||
+           text.includes('送信') || text.includes('完了') || text.includes('終了') ||
+           text.includes('제출') || text.includes('완료') || text.includes('마침');
+  });
+  
+  console.log(`Button analysis: ${continueButtons.length} continue buttons, ${submitButtonsText.length} submit buttons`);
+  console.log('Continue buttons:', continueButtons.map(btn => btn.textContent || btn.value || btn.getAttribute('aria-label')));
+  console.log('Submit buttons:', submitButtonsText.map(btn => btn.textContent || btn.value || btn.getAttribute('aria-label')));
+  
+  // If we have more continue/next buttons than submit buttons, it's likely not a submit screen
+  if (continueButtons.length > submitButtonsText.length) {
+    console.log('More continue buttons than submit buttons - not a submit screen');
+    return false;
   }
   
   return false;
