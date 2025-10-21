@@ -197,10 +197,20 @@ async function findAndClickNextButton() {
     '다음', '계속', '진행', '다음으로', '다음 페이지', '다음 단계'
   ];
   
+  // Keywords that indicate "return" or "back" actions (should be avoided when submit buttons are present)
+  const returnKeywords = [
+    'back', 'return', 'previous', 'go back', 'back to', 'return to',
+    '返回', '回到', '上一步', '返回上一步', '回到上一步',
+    'volver', 'regresar', 'anterior', 'volver a', 'regresar a',
+    'retour', 'retourner', 'précédent', 'retour à', 'retourner à',
+    '戻る', '前へ', '戻り', '前のページ', '戻るページ',
+    '돌아가기', '이전', '뒤로', '이전 페이지', '돌아가기 페이지'
+  ];
+  
   // Keywords that indicate final submission (should be avoided)
   const submitKeywords = [
     'submit form', 'final submit', 'send form', 'submit your response', 'submit response',
-    '提交表單', '最終提交', '發送表單', '提交您的回應', '提交回應',
+    '提交表單', '最終提交', '發送表單', '提交您的回應', '提交回應', '提交',
     'enviar formulario', 'enviar respuesta final', 'enviar respuesta',
     'envoyer formulaire', 'envoyer réponse finale', 'envoyer réponse',
     'フォーム送信', '最終送信', '回答を送信', '送信',
@@ -233,6 +243,16 @@ async function findAndClickNextButton() {
         score -= 25; // Exact match gets heavy penalty
       } else if (text.includes(keywordLower)) {
         score -= 15; // Partial match gets penalty
+      }
+    }
+    
+    // Check for return/back keywords (negative score, especially when submit buttons are present)
+    for (const keyword of returnKeywords) {
+      const keywordLower = keyword.toLowerCase();
+      if (text === keywordLower) {
+        score -= 20; // Exact match gets heavy penalty
+      } else if (text.includes(keywordLower)) {
+        score -= 10; // Partial match gets penalty
       }
     }
     
@@ -292,8 +312,25 @@ async function findAndClickNextButton() {
     console.log('Top 5 button candidates:', validButtons.slice(0, 5).map(b => ({ text: b.text, score: b.score })));
   }
   
+  // Check if we have submit buttons on the page - if so, avoid return buttons
+  const hasSubmitButtons = Array.from(document.querySelectorAll('button, input[type="submit"], [role="button"]')).some(btn => {
+    const text = (btn.textContent || btn.value || btn.getAttribute('aria-label') || '').toLowerCase().trim();
+    return submitKeywords.some(keyword => text.includes(keyword.toLowerCase()));
+  });
+  
   // Try clicking the highest scored button
   for (const { button, score, text } of validButtons) {
+    // If we have submit buttons and this is a return button, skip it
+    if (hasSubmitButtons) {
+      const isReturnButton = returnKeywords.some(keyword => 
+        text.toLowerCase().includes(keyword.toLowerCase())
+      );
+      if (isReturnButton) {
+        console.log(`Skipping return button "${text}" because submit buttons are present`);
+        continue;
+      }
+    }
+    
     try {
       console.log(`Attempting to click button with score ${score}: "${text}"`);
       // Ensure the button is still visible and clickable
@@ -389,22 +426,8 @@ function isSubmitScreen() {
     return true;
   }
   
-  // // Check for form completion indicators
-  // const completionTexts = [
-  //   'thank you', 'thanks', 'completed', 'finished', 'done',
-  //   '謝謝', '感謝', '已完成', '完成', '結束',
-  //   'gracias', 'completado', 'terminado', 'hecho',
-  //   'merci', 'complété', 'terminé', 'fini',
-  //   'ありがとう', '完了', '終了', '済み',
-  //   '감사합니다', '완료', '마침', '끝'
-  // ];
-  
-  // const bodyText = document.body.textContent.toLowerCase();
-  // for (const text of completionTexts) {
-  //   if (bodyText.includes(text)) {
-  //     return true;
-  //   }
-  // }
+  // Removed form completion check using document.body.textContent.toLowerCase()
+  // as it would match the entire form content and cause false positives
   
   // Additional check: Look for continue/next buttons vs submit buttons
   const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'));
@@ -431,6 +454,12 @@ function isSubmitScreen() {
   console.log(`Button analysis: ${continueButtons.length} continue buttons, ${submitButtonsText.length} submit buttons`);
   console.log('Continue buttons:', continueButtons.map(btn => btn.textContent || btn.value || btn.getAttribute('aria-label')));
   console.log('Submit buttons:', submitButtonsText.map(btn => btn.textContent || btn.value || btn.getAttribute('aria-label')));
+  
+  // If we have submit buttons, we're on a submit screen and should stop
+  if (submitButtonsText.length > 0) {
+    console.log('Found submit buttons - this is a submit screen, stopping auto-continue');
+    return true;
+  }
   
   // If we have more continue/next buttons than submit buttons, it's likely not a submit screen
   if (continueButtons.length > submitButtonsText.length) {
