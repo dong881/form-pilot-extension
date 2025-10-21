@@ -1,37 +1,76 @@
-# Icon Redesign - Simple Modern Minimalist Style
+# 修復自動下一步和範本填寫問題
 
-## 完成的工作
+## 問題分析
 
-我已經成功重新設計了一個簡單、現代、簡約風格的圖標，解決了原本圖標過於複雜和在小尺寸下不夠顯眼的問題。
+經過代碼分析，發現了兩個主要問題：
 
-## 新圖標設計特點
+### 1. 編輯過的範本無法自動填入
+**根本原因**：在 `popup.js` 中，當直接套用範本時，`labelNorm` 和 `valuesNorm` 被設為 `null`，導致相似度匹配失敗。
 
-### 設計元素：
-- **簡潔的表單文件**：乾淨的白色矩形，圓角設計
-- **極簡表單線條**：4條簡單的水平線代表表單欄位
-- **自動化勾選標記**：綠色圓圈配白色勾選，表示自動化功能
-- **現代箭頭**：藍色箭頭顯示進程/自動化流程
-- **乾淨背景**：現代藍色漸層圓圈配細緻邊框
+**修復方案**：
+- 在 `popup.js` 中導入 `normalizeText` 函數
+- 修正範本套用時的索引建立邏輯，正確計算 `labelNorm` 和 `valuesNorm`
 
-### 主要改進：
-- ✅ **簡化設計**：移除了複雜元素（閃光、魔法棒、多個表單元素）
-- ✅ **更好的可見性**：更大、更清晰的元素，在小尺寸下依然清晰可見
-- ✅ **現代美學**：乾淨的漸層和現代配色方案
-- ✅ **單一焦點**：一個清晰的概念 - 表單自動化
+### 2. 自動下一步功能失效
+**根本原因**：按鈕檢測邏輯可能存在問題，需要增強按鈕選擇器的覆蓋範圍和調試信息。
 
-## 技術實現
+**修復方案**：
+- 擴展按鈕選擇器，包含更多類型的可點擊元素
+- 增加調試日誌，幫助識別按鈕檢測問題
+- 改善按鈕點擊前的可見性檢查
 
-1. **創建了新的SVG圖標** (`icon.svg`) - 簡潔的現代設計
-2. **生成了HTML工具** (`icon_generator.html`) - 方便生成不同尺寸的PNG文件
-3. **提供了多種轉換方法** - 包括在線工具和命令行工具
-4. **創建了詳細說明文檔** (`ICON_README.md`) - 包含完整的轉換指南
+## 已實施的修復
 
-## 設計理念
+### 1. 修復範本填寫問題
+```javascript
+// 在 popup.js 中修正範本套用邏輯
+for (const f of entry.fields || []) {
+  const values = Array.isArray(f.values) ? f.values : (f.value != null ? [String(f.value)] : []);
+  const label = String(f.label || '');
+  const labelNorm = normalizeText(label);  // 正確計算 labelNorm
+  const valuesNorm = values.map(v => normalizeText(v));  // 正確計算 valuesNorm
+  index[f.type] = index[f.type] || [];
+  index[f.type].push({ label, labelNorm, type: f.type, values, valuesNorm });
+}
+```
 
-新設計遵循現代簡約主義原則：
-- **單一符號**：專注於一個核心概念
-- **高對比度**：確保在小尺寸下的可見性
-- **現代配色**：使用當代設計趨勢的藍色系
-- **清晰識別**：即使在小尺寸下也能清楚識別功能
+### 2. 修復自動下一步功能
+```javascript
+// 擴展按鈕選擇器
+const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], div[role="button"]'));
 
-這個新設計完美解決了原本圖標過於複雜和在小尺寸下不夠顯眼的問題，同時保持了現代簡約的質感風格。
+// 增加調試信息
+console.log(`Found ${allButtons.length} total buttons, ${validButtons.length} valid buttons`);
+if (validButtons.length > 0) {
+  console.log('Top 3 button candidates:', validButtons.slice(0, 3).map(b => ({ text: b.text, score: b.score })));
+}
+
+// 改善按鈕點擊檢查
+const rect = button.getBoundingClientRect();
+if (rect.width > 0 && rect.height > 0) {
+  button.click();
+  return true;
+}
+```
+
+### 3. 增加調試功能
+- 為範本匹配添加詳細的調試日誌
+- 為自動下一步功能添加狀態追蹤
+- 改善錯誤處理和用戶反饋
+
+## 預期效果
+
+修復後，以下功能應該正常運作：
+
+1. **編輯過的範本**：現在可以正確進行相似度匹配，自動填入表單欄位
+2. **自動下一步**：增強了按鈕檢測能力，應該能夠自動點擊「下一步」按鈕
+3. **調試能力**：增加了詳細的日誌輸出，便於排查問題
+
+## 測試建議
+
+1. 建立一個範本並進行編輯
+2. 在支援的表單網站上測試範本套用功能
+3. 確認自動下一步功能是否正常運作
+4. 檢查瀏覽器控制台的調試信息
+
+這些修復應該解決您提到的兩個主要問題。

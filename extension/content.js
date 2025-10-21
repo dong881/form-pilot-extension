@@ -180,7 +180,7 @@ async function findAndClickNextButton() {
   }
   
   // Get all potential buttons on the page using valid CSS selectors
-  const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'));
+  const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], div[role="button"]'));
   
   // Keywords that indicate "next" or "continue" actions in multiple languages
   const nextKeywords = [
@@ -267,12 +267,24 @@ async function findAndClickNextButton() {
     .filter(item => item.score > 0)
     .sort((a, b) => b.score - a.score);
   
+  console.log(`Found ${allButtons.length} total buttons, ${validButtons.length} valid buttons`);
+  if (validButtons.length > 0) {
+    console.log('Top 3 button candidates:', validButtons.slice(0, 3).map(b => ({ text: b.text, score: b.score })));
+  }
+  
   // Try clicking the highest scored button
   for (const { button, score, text } of validButtons) {
     try {
       console.log(`Attempting to click button with score ${score}: "${text}"`);
-      button.click();
-      return true;
+      // Ensure the button is still visible and clickable
+      const rect = button.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        button.click();
+        return true;
+      } else {
+        console.log(`Button is no longer visible, skipping`);
+        continue;
+      }
     } catch (error) {
       console.log(`Failed to click button: ${error.message}`);
       continue;
@@ -361,11 +373,14 @@ async function fillUsingIndexWithAutoNext(index, autoNext = false) {
   const result = await fillUsingIndex(index);
   
   if (autoNext && result.ok) {
+    console.log('Auto-next enabled, attempting to find and click next button...');
     // Wait a bit for form to process
     await new Promise(resolve => setTimeout(resolve, 1000));
     const nextClicked = await findAndClickNextButton();
     if (nextClicked) {
-      console.log('Auto-clicked next button');
+      console.log('Auto-clicked next button successfully');
+    } else {
+      console.log('No suitable next button found or auto-click failed');
     }
   }
   
@@ -397,6 +412,7 @@ async function fillUsingIndex(index) {
     const type = detectType(item);
     if (!title || type === 'unknown') continue;
     const { best, bestScore } = pickBestFieldMatch(title, type, index);
+    console.log(`Field "${title}" (${type}): best match score = ${bestScore ? bestScore.toFixed(3) : 'none'}`);
     if (!best || bestScore < 0.2) continue; // Lower threshold for broader matching
 
     if (type === 'text' || type === 'paragraph') {
