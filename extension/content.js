@@ -173,6 +173,12 @@ function setTextValue(item, value) {
 
 // Enhanced auto-next functionality with intelligent button detection
 async function findAndClickNextButton() {
+  // First, check if we're on a submit screen - if so, don't auto-continue
+  if (isSubmitScreen()) {
+    console.log('Detected submit screen - stopping auto-continue');
+    return false;
+  }
+  
   // Get all potential buttons on the page using valid CSS selectors
   const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'));
   
@@ -270,6 +276,80 @@ async function findAndClickNextButton() {
     } catch (error) {
       console.log(`Failed to click button: ${error.message}`);
       continue;
+    }
+  }
+  
+  return false;
+}
+
+// Function to detect if we're on a submit screen
+function isSubmitScreen() {
+  // Check for common submit screen indicators
+  const submitIndicators = [
+    // Text content indicators
+    'submit', 'send', 'finish', 'complete', 'done', 'submit form',
+    '送出', '提交', '完成', '結束', '發送', '提交表單',
+    'enviar', 'finalizar', 'completar', 'terminar',
+    'envoyer', 'terminer', 'compléter', 'finir',
+    '送信', '完了', '終了', '提出',
+    '제출', '완료', '마침', '보내기',
+    // Page title indicators
+    'review', 'confirmation', 'summary', 'final', 'submit',
+    '檢閱', '確認', '摘要', '最終', '提交',
+    'revisar', 'confirmación', 'resumen', 'final', 'enviar',
+    'réviser', 'confirmation', 'résumé', 'final', 'envoyer',
+    '確認', '要約', '最終', '送信',
+    '검토', '확인', '요약', '최종', '제출'
+  ];
+  
+  // Check page title
+  const pageTitle = document.title.toLowerCase();
+  for (const indicator of submitIndicators) {
+    if (pageTitle.includes(indicator.toLowerCase())) {
+      return true;
+    }
+  }
+  
+  // Check for submit buttons that are the primary action
+  const submitButtons = Array.from(document.querySelectorAll('button[type="submit"], input[type="submit"], button:not([type])'));
+  const primaryButtons = submitButtons.filter(btn => {
+    const text = (btn.textContent || btn.value || btn.getAttribute('aria-label') || '').toLowerCase().trim();
+    const style = getComputedStyle(btn);
+    const rect = btn.getBoundingClientRect();
+    
+    // Check if it's a primary button (usually styled differently)
+    const isPrimary = style.backgroundColor !== 'rgba(0, 0, 0, 0)' && 
+                     style.backgroundColor !== 'transparent' &&
+                     style.backgroundColor !== 'rgb(255, 255, 255)' &&
+                     rect.width > 0 && rect.height > 0;
+    
+    // Check if text contains submit keywords
+    const hasSubmitText = submitIndicators.some(indicator => 
+      text.includes(indicator.toLowerCase())
+    );
+    
+    return isPrimary && hasSubmitText;
+  });
+  
+  // If we have primary submit buttons, we're likely on a submit screen
+  if (primaryButtons.length > 0) {
+    return true;
+  }
+  
+  // Check for form completion indicators
+  const completionTexts = [
+    'thank you', 'thanks', 'completed', 'finished', 'done',
+    '謝謝', '感謝', '已完成', '完成', '結束',
+    'gracias', 'completado', 'terminado', 'hecho',
+    'merci', 'complété', 'terminé', 'fini',
+    'ありがとう', '完了', '終了', '済み',
+    '감사합니다', '완료', '마침', '끝'
+  ];
+  
+  const bodyText = document.body.textContent.toLowerCase();
+  for (const text of completionTexts) {
+    if (bodyText.includes(text)) {
+      return true;
     }
   }
   
