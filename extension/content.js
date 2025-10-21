@@ -61,7 +61,23 @@ function dispatchInputEvents(el) {
 }
 
 function getQuestionItems() {
-  const items = Array.from(document.querySelectorAll('div[role="listitem"]'));
+  // Support Google Forms
+  let items = Array.from(document.querySelectorAll('div[role="listitem"]'));
+  
+  // Support other form types
+  if (items.length === 0) {
+    // Try common form field selectors
+    items = Array.from(document.querySelectorAll('fieldset, .form-group, .form-field, .question, .field'));
+  }
+  
+  // If still no items, try to find any input containers
+  if (items.length === 0) {
+    items = Array.from(document.querySelectorAll('div, section, article')).filter(el => {
+      const inputs = el.querySelectorAll('input, textarea, select, [role="radio"], [role="checkbox"]');
+      return inputs.length > 0;
+    });
+  }
+  
   return items;
 }
 
@@ -85,10 +101,10 @@ function extractTitleText(item) {
 
 function detectType(item) {
   if (item.querySelector('textarea')) return 'paragraph';
-  if (item.querySelector('input[type="text"], input[type="email"], input[type="tel"], input[type="url"]')) return 'text';
-  if (item.querySelector('[role="radiogroup"], [role="radio"]')) return 'radio';
-  if (item.querySelector('[role="group"] [role="checkbox"], [role="checkbox"]')) return 'checkbox';
-  if (item.querySelector('[aria-haspopup="listbox"], [role="combobox"], [role="listbox"]')) return 'dropdown';
+  if (item.querySelector('input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="password"]')) return 'text';
+  if (item.querySelector('[role="radiogroup"], [role="radio"], input[type="radio"]')) return 'radio';
+  if (item.querySelector('[role="group"] [role="checkbox"], [role="checkbox"], input[type="checkbox"]')) return 'checkbox';
+  if (item.querySelector('[aria-haspopup="listbox"], [role="combobox"], [role="listbox"], select')) return 'dropdown';
   return 'unknown';
 }
 
@@ -138,7 +154,7 @@ async function openDropdownAndChoose(btn, desiredLabel) {
 }
 
 function setTextValue(item, value) {
-  const input = item.querySelector('input[type="text"], input[type="email"], input[type="tel"], input[type="url"]');
+  const input = item.querySelector('input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="password"]');
   if (input) {
     input.focus();
     input.value = value;
@@ -155,6 +171,50 @@ function setTextValue(item, value) {
   return false;
 }
 
+// Auto-next functionality
+async function findAndClickNextButton() {
+  // Common next button selectors
+  const nextSelectors = [
+    'button[type="submit"]:not([value*="送出"]):not([value*="提交"]):not([value*="Submit"])',
+    'input[type="submit"]:not([value*="送出"]):not([value*="提交"]):not([value*="Submit"])',
+    'button:contains("下一步"), button:contains("Next"), button:contains("繼續")',
+    'input[value*="下一步"], input[value*="Next"], input[value*="繼續"]',
+    '.next-button, .btn-next, .continue-btn',
+    '[role="button"]:contains("下一步"), [role="button"]:contains("Next")'
+  ];
+  
+  for (const selector of nextSelectors) {
+    const buttons = Array.from(document.querySelectorAll(selector));
+    for (const btn of buttons) {
+      const text = (btn.textContent || btn.value || '').toLowerCase();
+      if (text.includes('下一步') || text.includes('next') || text.includes('繼續') || text.includes('continue')) {
+        // Check if it's not a submit button
+        if (!text.includes('送出') && !text.includes('提交') && !text.includes('submit')) {
+          btn.click();
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// Enhanced form filling with auto-next
+async function fillUsingIndexWithAutoNext(index, autoNext = false) {
+  const result = await fillUsingIndex(index);
+  
+  if (autoNext && result.ok) {
+    // Wait a bit for form to process
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const nextClicked = await findAndClickNextButton();
+    if (nextClicked) {
+      console.log('Auto-clicked next button');
+    }
+  }
+  
+  return result;
+}
+
 function pickBestFieldMatch(questionTitle, type, index) {
   const candidates = (index[type] || []);
   const qn = normalizeText(questionTitle);
@@ -169,16 +229,22 @@ function pickBestFieldMatch(questionTitle, type, index) {
 
 async function fillUsingIndex(index) {
   const items = getQuestionItems();
+  let filledCount = 0;
+  
+  if (items.length === 0) {
+    return { ok: false, error: '此網站不支援表單自動填寫，目前主要支援 Google 表單' };
+  }
+  
   for (const item of items) {
     const title = extractTitleText(item);
     const type = detectType(item);
     if (!title || type === 'unknown') continue;
     const { best, bestScore } = pickBestFieldMatch(title, type, index);
-    if (!best || bestScore < 0.35) continue; // threshold to avoid poor matches
+    if (!best || bestScore < 0.2) continue; // Lower threshold for broader matching
 
     if (type === 'text' || type === 'paragraph') {
       const v = best.values?.[0] || '';
-      if (v) setTextValue(item, v);
+      if (v && setTextValue(item, v)) filledCount++;
     } else if (type === 'radio') {
       const options = getRadioOptions(item);
       if (!options.length) continue;
@@ -192,7 +258,10 @@ async function fillUsingIndex(index) {
         const sc = computeSimilarity(target, normalizeText(labels[i]));
         if (sc > bestSc) { bestSc = sc; bestIdx = i; }
       }
-      if (bestIdx >= 0) options[bestIdx].el.click();
+      if (bestIdx >= 0) {
+        options[bestIdx].el.click();
+        filledCount++;
+      }
     } else if (type === 'checkbox') {
       const options = getCheckboxOptions(item);
       if (!options.length) continue;
@@ -206,18 +275,28 @@ async function fillUsingIndex(index) {
           const sc = computeSimilarity(dv, labelN);
           if (sc > matchScore) matchScore = sc;
         }
-        const shouldBeChecked = matchScore >= 0.35;
+        const shouldBeChecked = matchScore >= 0.2;
         const isChecked = opt.el.getAttribute('aria-checked') === 'true';
-        if (shouldBeChecked && !isChecked) opt.el.click();
+        if (shouldBeChecked && !isChecked) {
+          opt.el.click();
+          filledCount++;
+        }
         if (!shouldBeChecked && isChecked) opt.el.click();
       }
     } else if (type === 'dropdown') {
       const btn = getDropdownButton(item);
       const desired = best.values?.[0] || '';
-      if (btn && desired) await openDropdownAndChoose(btn, desired);
+      if (btn && desired && await openDropdownAndChoose(btn, desired)) {
+        filledCount++;
+      }
     }
   }
-  return { ok: true };
+  
+  if (filledCount === 0) {
+    return { ok: false, error: '未找到匹配的欄位，請確認範本是否適用於此表單' };
+  }
+  
+  return { ok: true, filledCount };
 }
 
 function captureFields() {
@@ -253,8 +332,11 @@ function captureFields() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     if (message?.type === 'FILL_WITH_INDEX') {
-      await fillUsingIndex(message.index || {});
-      sendResponse({ ok: true });
+      const result = await fillUsingIndex(message.index || {});
+      sendResponse(result);
+    } else if (message?.type === 'FILL_WITH_AUTO_NEXT') {
+      const result = await fillUsingIndexWithAutoNext(message.index || {}, true);
+      sendResponse(result);
     } else if (message?.type === 'CONTENT_CAPTURE_REQUEST') {
       const cap = captureFields();
       sendResponse({ ok: true, ...cap });
