@@ -180,19 +180,19 @@ async function findAndClickNextButton() {
   }
   
   // Wait a bit for any dynamic content to load
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
   // Get all potential buttons on the page using valid CSS selectors
-  const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], div[role="button"]'));
+  const allButtons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], div[role="button"], span[role="button"]'));
   
   // Keywords that indicate "next" or "continue" actions in multiple languages
   const nextKeywords = [
-    'next', 'continue', 'proceed', 'forward', 'advance', 'go', 'next page', 'continue to',
-    '下一步', '繼續', '繼續進行', '前進', '進行', '前往', '下一頁', '繼續到',
-    'siguiente', 'continuar', 'proceder', 'avanzar', 'página siguiente',
-    'suivant', 'continuer', 'procéder', 'avancer', 'page suivante',
-    '次へ', '続行', '進む', '次に', '次のページ',
-    '다음', '계속', '진행', '다음으로', '다음 페이지'
+    'next', 'continue', 'proceed', 'forward', 'advance', 'go', 'next page', 'continue to', 'next step', 'continue to next',
+    '下一步', '繼續', '繼續進行', '前進', '進行', '前往', '下一頁', '繼續到', '下一步驟', '繼續下一步',
+    'siguiente', 'continuar', 'proceder', 'avanzar', 'página siguiente', 'siguiente paso',
+    'suivant', 'continuer', 'procéder', 'avancer', 'page suivante', 'étape suivante',
+    '次へ', '続行', '進む', '次に', '次のページ', '次のステップ',
+    '다음', '계속', '진행', '다음으로', '다음 페이지', '다음 단계'
   ];
   
   // Keywords that indicate final submission (should be avoided)

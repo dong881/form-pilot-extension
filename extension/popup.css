@@ -82,7 +82,18 @@ body {
 }
 
 .import-export {
-  padding: 0 var(--spacing) var(--spacing);
+  padding: var(--spacing);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.import-export .row {
+  display: flex;
+  gap: var(--spacing-xs);
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
 }
 
 .auto-next-section {
@@ -93,6 +104,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 60px;
+  margin-bottom: var(--spacing-xs);
 }
 
 .auto-next-control {
