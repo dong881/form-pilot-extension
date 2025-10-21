@@ -1,7 +1,14 @@
 import { getDB, setDB, getSettings, setSettings, buildFieldIndex, appendEntry, deleteEntry, makeEntryId } from './db.js';
 
-function isGoogleFormUrl(url) {
-  return typeof url === 'string' && url.startsWith('https://docs.google.com/forms');
+function isFormUrl(url) {
+  if (typeof url !== 'string') return false;
+  // Support Google Forms
+  if (url.startsWith('https://docs.google.com/forms')) return true;
+  // Support Taiwan Railway and High Speed Rail
+  if (url.includes('railway.gov.tw') || url.includes('thsrc.com.tw')) return true;
+  // Support other common form sites
+  if (url.includes('forms.gle') || url.includes('typeform.com') || url.includes('survey') || url.includes('form')) return true;
+  return false;
 }
 
 async function getActiveTab() {
@@ -9,13 +16,16 @@ async function getActiveTab() {
   return tabs[0];
 }
 
-async function sendFillToTab(tabId) {
+async function sendFillToTab(tabId, autoNext = false) {
   const db = await getDB();
   const index = buildFieldIndex(db);
   try {
-    await chrome.tabs.sendMessage(tabId, { type: 'FILL_WITH_INDEX', index });
+    const messageType = autoNext ? 'FILL_WITH_AUTO_NEXT' : 'FILL_WITH_INDEX';
+    const result = await chrome.tabs.sendMessage(tabId, { type: messageType, index });
+    return result;
   } catch (e) {
     // content script may not be ready yet
+    return { ok: false, error: '無法連接到此頁面' };
   }
 }
 
@@ -39,10 +49,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ ok: true, settings: newSettings });
         break;
       }
+      case 'POPUP_TOGGLE_AUTO_NEXT': {
+        const settings = await getSettings();
+        const newSettings = { ...settings, autoNext: Boolean(message.autoNext) };
+        await setSettings(newSettings);
+        sendResponse({ ok: true, settings: newSettings });
+        break;
+      }
       case 'POPUP_FILL_NOW': {
         const tab = await getActiveTab();
-        if (tab?.id) await sendFillToTab(tab.id);
-        sendResponse({ ok: true });
+        if (tab?.id) {
+          const settings = await getSettings();
+          const result = await sendFillToTab(tab.id, settings.autoNext);
+          sendResponse(result || { ok: true });
+        } else {
+          sendResponse({ ok: false, error: '無法取得當前頁面' });
+        }
         break;
       }
       case 'POPUP_CAPTURE': {
@@ -72,6 +94,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await deleteEntry(message.entryId);
         const db = await getDB();
         sendResponse({ ok: true, entriesCount: db.entries.length });
+        break;
+      }
+      case 'POPUP_UPDATE_ENTRY': {
+        const db = await getDB();
+        const entryIndex = db.entries.findIndex(e => e.id === message.entry.id);
+        if (entryIndex >= 0) {
+          db.entries[entryIndex] = message.entry;
+          await setDB(db);
+        }
+        sendResponse({ ok: true });
         break;
       }
       case 'POPUP_IMPORT_DB': {
@@ -108,10 +140,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && isGoogleFormUrl(tab?.url)) {
+  if (changeInfo.status === 'complete' && isFormUrl(tab?.url)) {
     const settings = await getSettings();
     if (settings.autorun) {
-      await sendFillToTab(tabId);
+      await sendFillToTab(tabId, settings.autoNext);
     }
   }
 });

@@ -85,6 +85,31 @@ body {
   padding: 0 var(--spacing) var(--spacing);
 }
 
+.auto-next-section {
+  padding: 0 var(--spacing) var(--spacing);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.auto-next-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+}
+
+.auto-next-label {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.auto-next-hint {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .row {
   display: flex;
   gap: var(--spacing-xs);
@@ -178,12 +203,14 @@ body {
   gap: var(--spacing-xs);
   transition: all 0.2s ease;
   box-shadow: var(--shadow);
+  margin-top: 8px;
 }
 
 .entry:hover {
   border-color: var(--brand);
   box-shadow: var(--shadow-lg);
   transform: translateY(-1px);
+  margin-top: 12px;
 }
 
 .entry .meta {
@@ -299,6 +326,90 @@ input:checked + .slider:before {
 
 .entry-list::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  max-width: 300px;
+  animation: slideIn 0.3s ease;
+}
+
+.notification.error {
+  border-color: var(--danger);
+  background: #fef2f2;
+}
+
+.notification.success {
+  border-color: var(--primary);
+  background: #f0fdf4;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Template editing styles */
+.template-editor {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  padding: var(--spacing);
+}
+
+.template-editor.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editor-content {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: var(--spacing);
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.editor-field {
+  margin-bottom: var(--spacing);
+}
+
+.editor-field label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: var(--spacing-xs);
+}
+
+.editor-field input,
+.editor-field textarea {
+  width: 100%;
+  padding: var(--spacing-xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
 }
 
 /* Responsive adjustments */
