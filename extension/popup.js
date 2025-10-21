@@ -24,18 +24,37 @@ async function refreshState() {
 function renderEntries(entries) {
   const list = $('#entryList');
   list.innerHTML = '';
-  for (const e of entries) {
+  
+  if (entries.length === 0) {
     const li = document.createElement('li');
     li.className = 'entry';
     li.innerHTML = `
       <div class="meta">
-        <span class="name">${escapeHtml(e.name || '未命名')}</span>
-        <span>${formatDate(e.createdAt || Date.now())}</span>
+        <span class="name" style="color: var(--muted); font-style: italic;">尚無範本</span>
+        <span class="muted">點擊「擷取此表單為範本」來建立第一個範本</span>
       </div>
+    `;
+    list.appendChild(li);
+    return;
+  }
+  
+  for (const e of entries) {
+    const li = document.createElement('li');
+    li.className = 'entry';
+    
+    // Truncate long text to prevent layout issues
+    const name = truncateText(escapeHtml(e.name || '未命名'), 30);
+    const sourceTitle = truncateText(escapeHtml(e.sourceTitle || ''), 40);
+    const sourceUrl = truncateText(escapeHtml(e.sourceUrl || ''), 50);
+    const date = formatDate(e.createdAt || Date.now());
+    
+    li.innerHTML = `
       <div class="meta">
-        <span class="muted">${escapeHtml(e.sourceTitle || '')}</span>
-        <span class="muted">${escapeHtml(e.sourceUrl || '')}</span>
+        <span class="name" title="${escapeHtml(e.name || '未命名')}">${name}</span>
+        <span class="date">${date}</span>
       </div>
+      ${sourceTitle ? `<div class="meta"><span class="muted" title="${escapeHtml(e.sourceTitle || '')}">${sourceTitle}</span></div>` : ''}
+      ${sourceUrl ? `<div class="meta"><span class="muted" title="${escapeHtml(e.sourceUrl || '')}">${sourceUrl}</span></div>` : ''}
       <div class="actions">
         <button class="btn" data-action="apply" data-id="${e.id}">套用此範本</button>
         <button class="btn danger" data-action="delete" data-id="${e.id}">刪除</button>
@@ -43,6 +62,11 @@ function renderEntries(entries) {
     `;
     list.appendChild(li);
   }
+}
+
+function truncateText(text, maxLength) {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength - 3) + '...';
 }
 
 function escapeHtml(str) {
